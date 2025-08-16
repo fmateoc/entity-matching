@@ -1,0 +1,317 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id 'org.springframework.boot' version '2.7.14' apply false
+    id 'io.spring.dependency-management' version '1.1.0'
+}
+
+group = 'com.loantrading'
+version = '1.0.0'
+description = 'Entity Matching System for Syndicated Loan Trading'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://repo.maven.apache.org/maven2' }
+}
+
+dependencies {
+    // Apache PDFBox for PDF processing
+    implementation 'org.apache.pdfbox:pdfbox:2.0.29'
+    implementation 'org.apache.pdfbox:pdfbox-tools:2.0.29'
+    
+    // Apache POI for Word documents
+    implementation 'org.apache.poi:poi:5.2.4'
+    implementation 'org.apache.poi:poi-ooxml:5.2.4'
+    implementation 'org.apache.poi:poi-scratchpad:5.2.4'
+    
+    // Apache Tika for document detection
+    implementation 'org.apache.tika:tika-core:2.9.0'
+    implementation 'org.apache.tika:tika-parsers-standard-package:2.9.0'
+    
+    // Tesseract for OCR
+    implementation 'net.sourceforge.tess4j:tess4j:5.8.0'
+    
+    // Apache Commons for text similarity algorithms
+    implementation 'org.apache.commons:commons-text:1.10.0'
+    implementation 'org.apache.commons:commons-lang3:3.13.0'
+    implementation 'org.apache.commons:commons-io:2.13.0'
+    
+    // Google Guava for caching and utilities
+    implementation 'com.google.guava:guava:32.1.2-jre'
+    
+    // Jackson for JSON processing
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.15.2'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.15.2'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'
+    
+    // Database drivers
+    implementation 'org.postgresql:postgresql:42.6.0'
+    implementation 'com.mysql:mysql-connector-j:8.1.0'
+    implementation 'com.oracle.database.jdbc:ojdbc8:21.11.0.0'
+    implementation 'com.microsoft.sqlserver:mssql-jdbc:12.4.1.jre11'
+    
+    // Connection pooling
+    implementation 'com.zaxxer:HikariCP:5.0.1'
+    
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+    implementation 'org.slf4j:slf4j-simple:2.0.9'
+    implementation 'ch.qos.logback:logback-classic:1.4.11'
+    implementation 'ch.qos.logback:logback-core:1.4.11'
+    
+    // Monitoring and metrics
+    implementation 'io.micrometer:micrometer-core:1.11.3'
+    implementation 'io.micrometer:micrometer-registry-prometheus:1.11.3'
+    
+    // Testing dependencies
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
+    testImplementation 'org.mockito:mockito-core:5.5.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.5.0'
+    testImplementation 'org.assertj:assertj-core:3.24.2'
+    testImplementation 'com.h2database:h2:2.2.220'
+    testImplementation 'org.testcontainers:testcontainers:1.19.0'
+    testImplementation 'org.testcontainers:postgresql:1.19.0'
+}
+
+// Main class configuration
+application {
+    mainClass = 'com.loantrading.matching.EntityMatchingApplication'
+}
+
+// JAR configuration
+jar {
+    manifest {
+        attributes(
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.version,
+            'Main-Class': 'com.loantrading.matching.EntityMatchingApplication',
+            'Built-By': System.getProperty('user.name'),
+            'Built-Date': new Date(),
+            'Built-JDK': System.getProperty('java.version')
+        )
+    }
+}
+
+// Shadow JAR configuration for fat/uber JAR
+shadowJar {
+    archiveBaseName = 'entity-matching'
+    archiveClassifier = 'all'
+    archiveVersion = project.version
+    
+    // Merge service files
+    mergeServiceFiles()
+    
+    // Handle duplicate files
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+    exclude 'META-INF/LICENSE*'
+    exclude 'META-INF/NOTICE*'
+    
+    // Relocate packages to avoid conflicts if needed
+    relocate 'com.google.common', 'shaded.com.google.common'
+    
+    manifest {
+        attributes(
+            'Main-Class': 'com.loantrading.matching.EntityMatchingApplication'
+        )
+    }
+}
+
+// Test configuration
+test {
+    useJUnitPlatform()
+    
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = false
+    }
+    
+    // Set heap size for tests
+    maxHeapSize = "2G"
+    
+    // Enable parallel test execution
+    systemProperty 'junit.jupiter.execution.parallel.enabled', 'true'
+    systemProperty 'junit.jupiter.execution.parallel.mode.default', 'concurrent'
+}
+
+// Task to copy dependencies
+task copyDependencies(type: Copy) {
+    from configurations.runtimeClasspath
+    into "$buildDir/libs/dependencies"
+}
+
+// Task to create distribution
+task createDistribution(type: Zip) {
+    dependsOn shadowJar, copyDependencies
+    
+    archiveFileName = "entity-matching-${version}.zip"
+    destinationDirectory = file("$buildDir/distributions")
+    
+    from("$buildDir/libs") {
+        include "entity-matching-${version}-all.jar"
+        into 'lib'
+    }
+    
+    from("scripts") {
+        into 'bin'
+        fileMode 0755
+    }
+    
+    from(".") {
+        include 'README.md'
+        include 'LICENSE'
+        include 'config/**'
+        into ''
+    }
+}
+
+// Task to run with test data
+task runTest(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.loantrading.matching.EntityMatchingApplication'
+    args = ['jdbc:h2:mem:test', 'sa', '', 'test']
+}
+
+// Task to run batch processing
+task runBatch(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.loantrading.matching.EntityMatchingApplication'
+    
+    if (project.hasProperty('dbUrl') && project.hasProperty('dbUser') && 
+        project.hasProperty('dbPass') && project.hasProperty('directory')) {
+        args = [project.dbUrl, project.dbUser, project.dbPass, 'batch', project.directory]
+    } else {
+        doFirst {
+            throw new GradleException('Please provide: -PdbUrl=... -PdbUser=... -PdbPass=... -Pdirectory=...')
+        }
+    }
+}
+
+// Task to generate project documentation
+task generateDocs(type: Javadoc) {
+    source = sourceSets.main.allJava
+    classpath = configurations.runtimeClasspath
+    destinationDir = file("$buildDir/docs/javadoc")
+    
+    options {
+        windowTitle = 'Entity Matching System API'
+        docTitle = 'Entity Matching System API Documentation'
+        author = true
+        use = true
+        version = true
+        links 'https://docs.oracle.com/en/java/javase/11/docs/api/'
+        encoding = 'UTF-8'
+        charSet = 'UTF-8'
+    }
+}
+
+// Task to check dependencies for vulnerabilities
+task checkDependencies {
+    doLast {
+        println "Checking dependencies for known vulnerabilities..."
+        configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            println " - ${artifact.moduleVersion.id}"
+        }
+    }
+}
+
+// Configure wrapper task
+wrapper {
+    gradleVersion = '8.14'
+    distributionType = Wrapper.DistributionType.ALL
+}
+
+// Custom task to create database schema
+task createSchema {
+    doLast {
+        println """
+        -- LoanIQ Entity Matching Database Schema
+        
+        CREATE TABLE IF NOT EXISTS entities (
+            entity_id BIGSERIAL PRIMARY KEY,
+            full_name VARCHAR(500) NOT NULL,
+            short_name VARCHAR(200),
+            ultimate_parent VARCHAR(500),
+            mei VARCHAR(10),
+            lei VARCHAR(20),
+            ein VARCHAR(20),
+            debt_domain_id VARCHAR(20),
+            email_domain VARCHAR(100),
+            country_code VARCHAR(2),
+            legal_address TEXT,
+            tax_address TEXT,
+            last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE (short_name)
+        );
+        
+        CREATE INDEX idx_entities_mei ON entities(mei);
+        CREATE INDEX idx_entities_lei ON entities(lei);
+        CREATE INDEX idx_entities_ein ON entities(ein);
+        CREATE INDEX idx_entities_debt_domain ON entities(debt_domain_id);
+        CREATE INDEX idx_entities_email_domain ON entities(email_domain);
+        CREATE INDEX idx_entities_full_name ON entities(LOWER(full_name));
+        CREATE INDEX idx_entities_short_name_clean ON entities(
+            REGEXP_REPLACE(LOWER(short_name), '[^a-z0-9]', '', 'g')
+        );
+        
+        CREATE TABLE IF NOT EXISTS entity_locations (
+            location_id BIGSERIAL PRIMARY KEY,
+            parent_customer_id BIGINT REFERENCES entities(entity_id),
+            mei VARCHAR(10),
+            lei VARCHAR(20),
+            ein VARCHAR(20),
+            country_code VARCHAR(2),
+            address TEXT
+        );
+        
+        CREATE INDEX idx_locations_parent ON entity_locations(parent_customer_id);
+        CREATE INDEX idx_locations_mei ON entity_locations(mei);
+        CREATE INDEX idx_locations_lei ON entity_locations(lei);
+        CREATE INDEX idx_locations_ein ON entity_locations(ein);
+        """
+    }
+}
+
+// Task to display project information
+task projectInfo {
+    doLast {
+        println """
+        ========================================
+        Entity Matching System
+        ========================================
+        Version: ${version}
+        Java Version: ${JavaVersion.current()}
+        
+        Main Tasks:
+        - gradle build          : Build the project
+        - gradle test           : Run tests
+        - gradle shadowJar      : Create executable JAR
+        - gradle runTest        : Run with test data
+        - gradle runBatch       : Process batch of documents
+        - gradle createDistribution : Create distribution ZIP
+        
+        Run Application:
+        java -jar build/libs/entity-matching-${version}-all.jar <db_url> <db_user> <db_pass> <command> [options]
+        
+        Commands:
+        - single <adf_file> [tax_form]  : Process single document
+        - batch <directory>              : Process directory
+        - test                          : Run test mode
+        ========================================
+        """
+    }
+}
+
+// Default tasks
+defaultTasks 'clean', 'build', 'shadowJar'
