@@ -16,8 +16,8 @@ public class CharacterNormalizer {
     
     static {
         // Smart quotes and apostrophes
-        REPLACEMENTS.put("[""]", "\"");
-        REPLACEMENTS.put("['']", "'");
+        REPLACEMENTS.put("[“”]", "\"");
+        REPLACEMENTS.put("[‘’]", "'");
         REPLACEMENTS.put("[`´]", "'");
         
         // Dashes
@@ -44,6 +44,10 @@ public class CharacterNormalizer {
         }
         
         String normalized = text;
+
+        // Handle diacritics
+        normalized = java.text.Normalizer.normalize(normalized, java.text.Normalizer.Form.NFD);
+        normalized = normalized.replaceAll("\\p{M}", "");
         
         // Apply replacements
         for (Map.Entry<String, String> entry : REPLACEMENTS.entrySet()) {

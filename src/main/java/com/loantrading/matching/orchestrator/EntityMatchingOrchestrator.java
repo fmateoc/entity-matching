@@ -190,21 +190,24 @@ public class EntityMatchingOrchestrator {
      * Determine decision based on match confidence
      */
     private String determineDecision(MatchResult match) {
-        // Decision thresholds
-        if (match.getScore() >= 85) {
-            return "MATCH";
-        } else if (match.getScore() >= 70) {
-            // Check for critical discrepancies
-            boolean hasCritical = match.hasCriticalDiscrepancies();
-            
-            if (hasCritical) {
-                return "MANUAL_REVIEW";
+        double score = match.getScore();
+
+        // Decision logic based on new confidence levels
+        if (score >= 85) { // High and Medium-High
+            if (match.hasCriticalDiscrepancies()) {
+                return "MANUAL_REVIEW"; // High score but with critical issue needs review
             }
             return "MATCH";
-        } else if (match.getScore() >= 50) {
+        } else if (score >= 70) { // Medium
+            // Medium confidence always goes to review queue as per requirement interpretation
             return "MANUAL_REVIEW";
-        } else {
-            return "NO_MATCH";
+        } else { // Low
+            // Per requirement "Review Queue (<70%)", but we can set a lower bound for NO_MATCH
+            if (score >= 50) {
+                return "MANUAL_REVIEW";
+            } else {
+                return "NO_MATCH";
+            }
         }
     }
     

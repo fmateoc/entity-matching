@@ -84,7 +84,7 @@ public class ProcessingResult {
     
     public void addAuditEntry(String entry) {
         this.auditTrail.add(String.format("[%s] %s",
-            LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATETIME), entry));
+            LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), entry));
     }
     
     public LocalDateTime getProcessedAt() {

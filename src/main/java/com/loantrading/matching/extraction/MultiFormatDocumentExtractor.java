@@ -11,20 +11,19 @@ public class MultiFormatDocumentExtractor {
     private static final Logger logger = LoggerFactory.getLogger(MultiFormatDocumentExtractor.class);
     
     private final PDFExtractor pdfExtractor;
-    private final WordExtractor wordExtractor;
+    private final WordDocumentExtractor wordExtractor;
     private final FieldParser fieldParser;
     private final OCRProcessor ocrProcessor;
     private final CharacterNormalizer characterNormalizer;
     
     public MultiFormatDocumentExtractor() {
         this.pdfExtractor = new PDFExtractor();
-        this.wordExtractor = new WordExtractor();
+        this.wordExtractor = new WordDocumentExtractor();
         this.fieldParser = new FieldParser();
         this.ocrProcessor = new OCRProcessor();
         this.characterNormalizer = new CharacterNormalizer();
     }
     
-    @Override
     public ExtractedEntity extract(byte[] documentContent, String filename) throws ExtractionException {
         String text;
         double ocrConfidence = 1.0;

@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Normalizes entity names for comparison
@@ -15,7 +17,7 @@ public class NameNormalizer {
     private static final Set<String> CORPORATE_FORMS = new HashSet<>(Arrays.asList(
         // US forms
         "inc", "incorporated", "corp", "corporation", "llc", "llp", "lp",
-        "ltd", "limited", "co", "company", "group", "holding", "holdings",
+        "ltd", "limited", "co", "company", "holding", "holdings",
         "enterprises", "ent", "industries", "ind",
         
         // International forms
@@ -99,8 +101,8 @@ public class NameNormalizer {
         
         String normalized = name.toLowerCase().trim();
         
-        // Remove special characters but keep spaces and hyphens
-        normalized = normalized.replaceAll("[^a-z0-9\\s-]", " ");
+        // Remove special characters but keep spaces, hyphens, and apostrophes
+        normalized = normalized.replaceAll("[^a-z0-9\\s-']", " ");
         
         // Expand common abbreviations
         for (Map.Entry<String, String> abbr : ABBREVIATIONS.entrySet()) {
@@ -162,8 +164,8 @@ public class NameNormalizer {
         
         for (String pattern : patterns) {
             String regex = "(?i)(.+?)\\s+" + Pattern.quote(pattern) + "\\s+(.+)";
-            java.util.regex.Pattern p = java.util.regex.Pattern.compile(regex);
-            java.util.regex.Matcher m = p.matcher(fullName);
+            Pattern p = Pattern.compile(regex);
+            Matcher m = p.matcher(fullName);
             
             if (m.find()) {
                 String legalName = m.group(1).trim();
