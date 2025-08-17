@@ -31,10 +31,14 @@ public class NameNormalizer {
         "partners", "partnership", "investments", "capital", "ventures",
         "equity", "credit", "asset", "management", "advisors", "advisers"
     ));
-    
+    private static final Pattern CORPORATE_FORMS_PATTERN;
     private static final Map<String, String> ABBREVIATIONS = new HashMap<>();
     
     static {
+        // Build the corporate forms regex pattern
+        String formsRegex = String.join("|", CORPORATE_FORMS);
+        CORPORATE_FORMS_PATTERN = Pattern.compile("\\b(" + formsRegex + ")\\b", Pattern.CASE_INSENSITIVE);
+
         // Common abbreviations
         ABBREVIATIONS.put("intl", "international");
         ABBREVIATIONS.put("natl", "national");
@@ -110,9 +114,7 @@ public class NameNormalizer {
         }
         
         // Remove corporate forms
-        for (String form : CORPORATE_FORMS) {
-            normalized = normalized.replaceAll("\\b" + form + "\\b", "");
-        }
+        normalized = CORPORATE_FORMS_PATTERN.matcher(normalized).replaceAll("");
         
         // Remove articles
         normalized = normalized.replaceAll("\\b(the|a|an|and|of|in|for|by|with|from)\\b", "");
