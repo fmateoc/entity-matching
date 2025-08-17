@@ -91,10 +91,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'
     
     // Database drivers
-    implementation 'org.postgresql:postgresql:42.6.0'
-    implementation 'com.mysql:mysql-connector-j:8.1.0'
     implementation 'com.oracle.database.jdbc:ojdbc8:21.11.0.0'
-    implementation 'com.microsoft.sqlserver:mssql-jdbc:12.4.1.jre11'
     
     // Connection pooling
     implementation('com.zaxxer:HikariCP:5.0.1') {
@@ -103,7 +100,6 @@ dependencies {
     
     // Logging
     implementation 'org.slf4j:slf4j-api:2.0.9'
-    implementation 'org.slf4j:slf4j-simple:2.0.9'
     implementation('ch.qos.logback:logback-classic:1.4.11') {
         exclude group: 'org.slf4j', module: 'slf4j-api'
     }
@@ -120,13 +116,6 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:5.5.0'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.5.0'
     testImplementation 'org.assertj:assertj-core:3.24.2'
-    testImplementation 'com.h2database:h2:2.2.220'
-    testImplementation('org.testcontainers:testcontainers:1.19.0') {
-        exclude group: 'org.slf4j', module: 'slf4j-api'
-    }
-    testImplementation('org.testcontainers:postgresql:1.19.0') {
-        exclude group: 'org.slf4j', module: 'slf4j-api'
-    }
 }
 
 // Main class configuration
