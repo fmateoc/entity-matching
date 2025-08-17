@@ -12,8 +12,8 @@ import java.io.IOException;
 /**
  * Extracts text from Microsoft Word documents (both .doc and .docx)
  */
-public class WordExtractor {
-    private static final Logger logger = LoggerFactory.getLogger(WordExtractor.class);
+public class WordDocumentExtractor {
+    private static final Logger logger = LoggerFactory.getLogger(WordDocumentExtractor.class);
     
     /**
      * Extract text from modern Word format (.docx)

@@ -57,6 +57,13 @@ public class ConfidenceScorer {
             score += (identifierCount - 1) * 5; // 5 points per additional identifier
             match.addEvidence(String.format("%d identifiers matched", identifierCount));
         }
+
+        // Penalty for potential duplicates
+        if (!match.getPotentialDuplicates().isEmpty()) {
+            score -= 5; // Apply a small penalty
+            match.addEvidence(String.format("Score penalized due to %d potential duplicates.",
+                match.getPotentialDuplicates().size()));
+        }
         
         // Ensure score is within bounds
         score = Math.max(0, Math.min(100, score));
@@ -156,6 +163,7 @@ public class ConfidenceScorer {
         if (components.containsKey("lei_match") || components.containsKey("lei_boost")) {
             count++;
         }
+        if (components.containsKey("ein_match") || components.containsKey("ein_boost")) {
             count++;
         }
         if (components.containsKey("debt_domain_id_match") || components.containsKey("debt_domain_id_boost")) {

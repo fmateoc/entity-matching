@@ -66,6 +66,14 @@ public class EntityMatchingApplication {
         logger.info("Processing ADF: {} with Tax Form: {}", adfFilename, taxFormFilename);
         return orchestrator.processDocuments(adfContent, adfFilename, taxFormContent, taxFormFilename);
     }
+
+    /**
+     * Process Admin Details Form without a Tax Form
+     */
+    public ProcessingResult processAdminDetailsForm(byte[] adfContent, String adfFilename) {
+        logger.info("Processing ADF without tax form: {}", adfFilename);
+        return processWithTaxForm(adfContent, adfFilename, null, null);
+    }
     
     /**
      * Process a batch of documents
