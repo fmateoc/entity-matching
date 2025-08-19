@@ -23,6 +23,8 @@ This part worked smoothly—no surprise, since LLMs excel at text generation and
 - **[System Requirements](system-requirements.md):** Detailed business and functional requirements
 - **[Foundation Prompt](foundation-prompt.md)** The initial AI prompt used for system analysis and design
 
+Note that the **rules** in the "rules-based-logic" part were entirely provided my me, based on my domain knowledge. I had spent quite some time debugging weird issues caused by duplicate customer records, and trying to come up with ways to avoid such situations. I knew what needed to be done, I had just not put it together in an end-to-end automated process. While it was comforting to see that the AI recognized the issues as I was describing them, I don't think there is a way for somebody unfamiliar with them to somehow elicit the rules/domain knowledge from the AI.
+
 ---
 
 ## Step 2: Code Generation with Claude Opus 4.1
@@ -47,7 +49,10 @@ Bottom line: **not impressed**. For serious enterprise-style Java projects, Opus
 
 ## Step 3: Cleanup with Google Jules
 
-I didn’t want to clean up all the Opus mess by hand, so I tried **Google Jules**.
+I didn’t want to clean up all the Opus mess by hand, this would have defeated the purpose of testing AI tools on an end-to-end project.
+In my initial plan, I would have tried Claude Code at this stage, but it can not be tried for free, not even with the \$20 plan, and, I strongly suspect, not even with the next, \$100+ plan, I would have needed to pay on top of that for usage. Plus, at best, it would have used behind the scenes the same Opus model that had already dissapointed in the previous step.
+The situation seems very similar with GPT5.
+Luckily, I stumbled upon **Google Jules**.
 
 Caveat: Jules can’t work on your local filesystem—you have to push your code to GitHub. That’s why this repo exists.
 
@@ -60,7 +65,7 @@ My experience:
   * Helped restructure the project.
   * Generated unit tests.
 
-Overall, Jules felt like working with a **“smart intern.”** Not always reliable, but capable of doing useful work faster than I could myself.
+Overall, Jules felt like working with a **“smart intern.”** Not always reliable, but capable of doing useful work. More than that, once it uderstood what needed to be done, it would do it faster than I could myself.
 
 ---
 
