@@ -9,6 +9,7 @@ Most AI demos are toy examples—“make me a website” or “switch my theme t
 What made this interesting—and hard for AI—is the nature of the problem: discrete matching of messy, uncontrolled data. There’s no clean dataset and no chance of outsourcing cleanup; it’s a reality we have to live with. This rules out machine learning as the primary approach. Instead, the challenge is about building rules-based logic that encodes human domain expertise—the kind of thing developers and analysts do all the time, but AI tends to stumble on.
 
 A subgoal was to see how much I could get done **without paying**. I don’t mind paying if a tool is genuinely useful, but I didn’t want to spend money just to kick the tires.
+Of course, the AI tools' capabilities and prices are very much in flux, so, as we move further away from mid-August 2025, 
 
 ---
 
