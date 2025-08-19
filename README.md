@@ -25,7 +25,7 @@ This part worked smoothly—no surprise, since LLMs excel at text generation and
 - **[System Requirements](system-requirements.md):** Detailed business and functional requirements
 - **[Foundation Prompt](foundation-prompt.md)** The initial AI prompt used for system analysis and design
 
-Note that the **rules** in the "rules-based-logic" part were entirely provided my me, based on my domain expertise. I had spent quite some time debugging weird issues caused by duplicate customer records, and trying to come up with ways to avoid such situations. I knew what needed to be done, I had just not put it together in an end-to-end automated process. While it was comforting to see that the AI recognized the issues as I was describing them, I don't think there is a way for somebody unfamiliar with them to somehow elicit the rules/domain knowledge from the AI.
+Note that the **rules** in the "rules-based-logic" part were entirely provided my me, based on my domain expertise. I had spent quite some time debugging weird issues caused by duplicate customer records, and trying to come up with ways to avoid such situations. I knew what needed to be done, I had just not put it together in an end-to-end automated process. While it was comforting (for the project's sake) to see that the AI recognized the issues as I was describing them, I don't think there is a way for somebody unfamiliar with them to somehow elicit the rules/domain knowledge from the AI.
 
 ---
 
