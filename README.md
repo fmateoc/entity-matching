@@ -20,6 +20,8 @@ I started with **Claude Sonnet 4.0** in interactive mode. Over several sessions,
 * A **detailed requirements document** for implementation.
 
 This part worked smoothly—no surprise, since LLMs excel at text generation and structure. Both documents are published alongside this README.
+- **[System Requirements](system-requireements.md):** Detailed business and functional requirements
+- **[Foundation Prompt](foundation-prompt.md)** The initial AI prompt used for system analysis and design
 
 ---
 
