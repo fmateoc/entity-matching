@@ -9,6 +9,7 @@ Most AI demos are toy examples—“make me a website” or “switch my theme t
 What made this interesting—and hard for AI—is the nature of the problem: discrete matching of messy, uncontrolled data. There’s no clean dataset and no chance of outsourcing cleanup; it’s a reality we have to live with. This rules out machine learning as the primary approach. Instead, the challenge is about building rules-based logic that encodes human domain expertise—the kind of thing developers and analysts do all the time, but AI tends to stumble on.
 
 A subgoal was to see how much I could get done **without paying**. I don’t mind paying if a tool is genuinely useful, but I didn’t want to spend money just to kick the tires.
+
 Of course, the AI tools' capabilities and prices are very much in flux, so, as we move further and further away from mid-August 2025, take this with a bigger and bigger grain of salt.
 
 ---
@@ -52,7 +53,9 @@ Bottom line: **not impressed**. For serious enterprise-style Java projects, Opus
 
 I didn’t want to clean up all the Opus mess by hand, this would have defeated the purpose of testing AI tools on an end-to-end project.
 In my initial plan, I would have tried Claude Code at this stage, but it can not be tried for free, not even with the \$20 plan, and, I strongly suspect, not even with the next, \$100+ plan, I would have needed to pay on top of that for usage. Plus, at best, it would have used behind the scenes the same Opus model that had already dissapointed in the previous step.
+
 The situation seems very similar with GPT5.
+
 Luckily, I stumbled upon **Google Jules**.
 
 Caveat: Jules can’t work on your local filesystem—you have to push your code to GitHub. That’s why this repo exists.
