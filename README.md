@@ -68,7 +68,7 @@ My experience:
   * Cleaned up Opus’s broken output.
   * Helped restructure the project.
   * Generated unit tests.
-  * Steps towards productizing: use HikariConfig and data source classname instead of jdbcUrl, robust text handling with encoding detection using `icu4j`, migrate to Java 17 and newer versions of the dependencies
+  * Steps towards productizing: use HikariConfig and data source classname instead of jdbcUrl, robust text handling with encoding detection using `icu4j`, externalize hardcoded SQL and test data, migrate to Java 17 and newer versions of the dependencies
 
 Overall, Jules felt like working with a **“smart intern.”** Not always reliable, but capable of doing useful work. More than that, once it uderstood what needed to be done, it would do it faster than I could myself.
 
@@ -90,4 +90,10 @@ I have described, in general terms, which entity attributes useful for matching 
 
 ---
 
-## 
+## Meta-Observation
+
+This was an Aha moment! So this is what the famous agentic AIs are good for (in this instance Jules)!
+
+Before, I had tried both using a chatbot for code generation and integrating one with the IDE. Both were bad experiences, especially the integration - it slows down the IDE tremendously and makes it unstable, and that is my main tool/bread and butter as a develoepr, so for me it was completely unacceptable.
+
+But an agent working remotely and submitting PRs for review, is a wet dream for experienced developers: having a capable assistant/junior developer implementing your ideas and all the grunt work. Of course, this is a temporary stage, the mothership keeps collecting this data/the interactions/iterative development, so presumably the AIs will reach a stage where they will be able to also do the final orchestration. So enjoy it while it lasts!
