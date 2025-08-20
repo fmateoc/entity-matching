@@ -46,6 +46,12 @@ dependencyManagement {
     }
 }
 
+// To analyze dependencies for unused entries, you can temporarily add the following plugin
+// to the `plugins` block at the top of this file:
+//   id 'com.autonomousapps.dependency-analysis' version '2.19.0'
+// Then run the following command to generate a report:
+//   ./gradlew buildHealth
+// The report will be generated at build/reports/dependency-analysis/build-health-report.txt
 dependencies {
     // Apache PDFBox for PDF processing
     implementation 'org.apache.pdfbox:pdfbox:2.0.29'
