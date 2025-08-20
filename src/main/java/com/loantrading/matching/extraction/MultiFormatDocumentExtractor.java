@@ -44,8 +44,6 @@ public class MultiFormatDocumentExtractor {
                 text = wordExtractor.extractDocxText(documentContent);
             } else if (filename.toLowerCase().endsWith(".doc")) {
                 text = wordExtractor.extractDocText(documentContent);
-            } else if (filename.toLowerCase().endsWith(".txt")) {
-                text = new String(documentContent);
             } else {
                 throw new ExtractionException("Unsupported file format: " + filename);
             }
