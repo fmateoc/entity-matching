@@ -6,6 +6,8 @@ import com.loantrading.matching.orchestrator.EntityMatchingOrchestrator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,13 +16,11 @@ import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * Main application class for the Entity Matching System
@@ -29,22 +29,30 @@ public class EntityMatchingApplication {
     private static final Logger logger = LoggerFactory.getLogger(EntityMatchingApplication.class);
     
     private final EntityMatchingOrchestrator orchestrator;
-    private final Connection dbConnection;
+    private final HikariDataSource dataSource;
     private final ObjectMapper jsonMapper;
     
     /**
      * Initialize the application with database connection
      */
-    public EntityMatchingApplication(String dbUrl, String dbUser, String dbPassword) throws SQLException {
+    public EntityMatchingApplication(String dataSourceClassName, String serverName) throws SQLException {
         logger.info("Initializing Entity Matching Application");
         
-        // Set up database connection
-        Properties connectionProps = new Properties();
-        connectionProps.put("user", dbUser);
-        connectionProps.put("password", dbPassword);
+        HikariConfig config = new HikariConfig();
+        config.setDataSourceClassName(dataSourceClassName);
+        config.addDataSourceProperty("serverName", serverName);
         
-        this.dbConnection = DriverManager.getConnection(dbUrl, connectionProps);
-        this.dbConnection.setAutoCommit(false); // Use transactions
+        config.setAutoCommit(false);
+        config.setMaximumPoolSize(10);
+        config.setMinimumIdle(2);
+        config.setPoolName("EntityMatchingPool");
+
+        this.dataSource = new HikariDataSource(config);
+
+        // The orchestrator and its components expect a single long-lived connection.
+        // We'll get one connection from the pool and use it for the application's lifetime.
+        // The LoanIQRepository will close this connection when the app shuts down.
+        Connection dbConnection = dataSource.getConnection();
         
         // Initialize orchestrator
         this.orchestrator = new EntityMatchingOrchestrator(dbConnection);
@@ -200,17 +208,15 @@ public class EntityMatchingApplication {
      * Close application resources
      */
     public void close() {
-        try {
-            orchestrator.shutdown();
-            
-            if (dbConnection != null && !dbConnection.isClosed()) {
-                dbConnection.close();
-            }
-            
-            logger.info("Application closed successfully");
-        } catch (SQLException e) {
-            logger.error("Error closing application", e);
+        // The orchestrator shutdown will close the connection obtained from the pool.
+        orchestrator.shutdown();
+
+        // Close the datasource, which will close the connection pool.
+        if (dataSource != null) {
+            dataSource.close();
         }
+
+        logger.info("Application closed successfully");
     }
     
     /**
@@ -222,22 +228,20 @@ public class EntityMatchingApplication {
         System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
         System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "yyyy-MM-dd HH:mm:ss");
         
-        if (args.length < 4) {
-            System.err.println("Usage: EntityMatchingApplication <db_url> <db_user> <db_password> <command> [options]");
+        if (args.length < 3) {
+            System.err.println("Usage: EntityMatchingApplication <dataSourceClassName> <serverName> <command> [options]");
             System.err.println("Commands:");
             System.err.println("  single <adf_file> [tax_form_file] - Process single document");
             System.err.println("  batch <directory> - Process all documents in directory");
-            System.err.println("  test - Run with test data");
             System.exit(1);
         }
         
-        String dbUrl = args[0];
-        String dbUser = args[1];
-        String dbPassword = args[2];
-        String command = args[3];
+        String dataSourceClassName = args[0];
+        String serverName = args[1];
+        String command = args[2];
         
         try {
-            EntityMatchingApplication app = new EntityMatchingApplication(dbUrl, dbUser, dbPassword);
+            EntityMatchingApplication app = new EntityMatchingApplication(dataSourceClassName, serverName);
             
             switch (command.toLowerCase()) {
                 case "single":
@@ -254,10 +258,6 @@ public class EntityMatchingApplication {
                         System.exit(1);
                     }
                     processBatchDocuments(app, args[4]);
-                    break;
-                    
-                case "test":
-                    runTestMode(app);
                     break;
                     
                 default:
@@ -322,34 +322,6 @@ public class EntityMatchingApplication {
         System.out.println("Report saved to: " + reportFile);
     }
     
-    private static void runTestMode(EntityMatchingApplication app) throws Exception {
-        System.out.println("Running in test mode with sample data...");
-        
-        // Create test document content
-        String testAdf = "Legal Name: Test Company LLC\n" +
-                         "MEI: US12345678\n" +
-                         "EIN: 12-3456789\n" +
-                         "Email: contact@testcompany.com\n" +
-                         "Country: US";
-        
-        byte[] testContent = testAdf.getBytes();
-        
-        ProcessingResult result = app.processAdminDetailsForm(testContent, "test_adf.txt");
-        
-        System.out.println("\n=== TEST RESULT ===");
-        System.out.println("Decision: " + result.getDecision());
-        System.out.println("Extraction Confidence: " + 
-            (result.getExtractedData() != null ? result.getExtractedData().getExtractionConfidence() : "N/A"));
-        
-        if (result.getExtractedData() != null) {
-            System.out.println("Extracted MEI: " + result.getExtractedData().getMei());
-            System.out.println("Extracted EIN: " + result.getExtractedData().getEin());
-            System.out.println("Extracted Legal Name: " + result.getExtractedData().getLegalName());
-        }
-        
-        app.saveResultToJson(result, "test_result.json");
-        System.out.println("\nTest results saved to: test_result.json");
-    }
     
     /**
      * Inner class for batch reporting

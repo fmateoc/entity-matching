@@ -212,12 +212,6 @@ task createDistribution(type: Zip) {
     }
 }
 
-// Task to run with test data
-task runTest(type: JavaExec) {
-    classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'com.loantrading.matching.EntityMatchingApplication'
-    args = ['jdbc:h2:mem:test', 'sa', '', 'test']
-}
 
 // Task to run batch processing
 task runBatch(type: JavaExec) {
