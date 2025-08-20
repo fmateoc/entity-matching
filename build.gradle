@@ -11,8 +11,8 @@ version = '1.0.0'
 description = 'Entity Matching System for Syndicated Loan Trading'
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 repositories {
@@ -229,7 +229,7 @@ task generateDocs(type: Javadoc) {
         author = true
         use = true
         version = true
-        links 'https://docs.oracle.com/en/java/javase/11/docs/api/'
+        links 'https://docs.oracle.com/en/java/javase/17/docs/api/'
         encoding = 'UTF-8'
         charSet = 'UTF-8'
     }
