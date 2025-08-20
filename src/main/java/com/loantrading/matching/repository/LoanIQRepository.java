@@ -7,9 +7,11 @@ import com.google.common.cache.LoadingCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.InputStream;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -45,79 +47,19 @@ public class LoanIQRepository {
     }
     
     private void prepareStatements() throws SQLException {
-        // MEI search - checks both main entities and locations
-        statements.put("findByMEI", connection.prepareStatement(
-            "SELECT e.*, 'MAIN' as record_type, NULL as parent_customer_id " +
-            "FROM entities e WHERE e.mei = ? " +
-            "UNION ALL " +
-            "SELECT e.*, 'LOCATION' as record_type, l.parent_customer_id " +
-            "FROM entity_locations l " +
-            "JOIN entities e ON l.location_id = e.entity_id " +
-            "WHERE l.mei = ?"
-        ));
-        
-        // LEI search
-        statements.put("findByLEI", connection.prepareStatement(
-            "SELECT e.*, 'MAIN' as record_type, NULL as parent_customer_id " +
-            "FROM entities e WHERE e.lei = ? " +
-            "UNION ALL " +
-            "SELECT e.*, 'LOCATION' as record_type, l.parent_customer_id " +
-            "FROM entity_locations l " +
-            "JOIN entities e ON l.location_id = e.entity_id " +
-            "WHERE l.lei = ?"
-        ));
-        
-        // EIN search (normalized)
-        statements.put("findByEIN", connection.prepareStatement(
-            "SELECT e.*, 'MAIN' as record_type, NULL as parent_customer_id " +
-            "FROM entities e WHERE REPLACE(e.ein, '-', '') = REPLACE(?, '-', '') " +
-            "UNION ALL " +
-            "SELECT e.*, 'LOCATION' as record_type, l.parent_customer_id " +
-            "FROM entity_locations l " +
-            "JOIN entities e ON l.location_id = e.entity_id " +
-            "WHERE REPLACE(l.ein, '-', '') = REPLACE(?, '-', '')"
-        ));
-        
-        // Debt Domain ID search
-        statements.put("findByDebtDomainId", connection.prepareStatement(
-            "SELECT *, 'MAIN' as record_type, NULL as parent_customer_id " +
-            "FROM entities WHERE debt_domain_id = ?"
-        ));
-        
-        // Name search
-        statements.put("findByName", connection.prepareStatement(
-            "SELECT *, 'MAIN' as record_type, NULL as parent_customer_id " +
-            "FROM entities WHERE " +
-            "LOWER(full_name) LIKE ? OR LOWER(short_name) LIKE ? " +
-            "OR LOWER(ultimate_parent) LIKE ? " +
-            "ORDER BY CASE " +
-            "  WHEN LOWER(full_name) = LOWER(?) THEN 1 " +
-            "  WHEN LOWER(short_name) = LOWER(?) THEN 2 " +
-            "  ELSE 3 END " +
-            "LIMIT 100"
-        ));
-        
-        // Email domain search
-        statements.put("findByEmailDomain", connection.prepareStatement(
-            "SELECT *, 'MAIN' as record_type, NULL as parent_customer_id " +
-            "FROM entities WHERE " +
-            "email_domain = ? OR " +
-            "LOWER(full_name) LIKE ? OR " +
-            "LOWER(ultimate_parent) LIKE ?"
-        ));
-        
-        // Cleaned short name search (for duplicate detection)
-        statements.put("findByCleanedShortName", connection.prepareStatement(
-            "SELECT *, 'MAIN' as record_type, NULL as parent_customer_id " +
-            "FROM entities WHERE " +
-            "REGEXP_REPLACE(LOWER(short_name), '[^a-z0-9]', '') = ?"
-        ));
-        
-        // Find entity by ID
-        statements.put("findById", connection.prepareStatement(
-            "SELECT *, 'MAIN' as record_type, NULL as parent_customer_id " +
-            "FROM entities WHERE entity_id = ?"
-        ));
+        Properties queries = new Properties();
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream("queries.properties")) {
+            if (input == null) {
+                throw new SQLException("Sorry, unable to find queries.properties");
+            }
+            queries.load(input);
+        } catch (java.io.IOException e) {
+            throw new SQLException("Error loading queries.properties", e);
+        }
+
+        for (String key : queries.stringPropertyNames()) {
+            statements.put(key, connection.prepareStatement(queries.getProperty(key)));
+        }
     }
     
     /**
