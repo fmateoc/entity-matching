@@ -104,6 +104,9 @@ dependencies {
         exclude group: 'org.slf4j', module: 'slf4j-api'
     }
     implementation 'ch.qos.logback:logback-core:1.4.11'
+
+    // ICU for advanced Unicode and globalization support
+    implementation 'com.ibm.icu:icu4j:77.1'
     
     // Monitoring and metrics
     implementation 'io.micrometer:micrometer-core:1.11.3'
