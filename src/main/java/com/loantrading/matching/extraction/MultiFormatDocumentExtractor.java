@@ -1,7 +1,6 @@
 package com.loantrading.matching.extraction;
 
 import com.loantrading.matching.entity.ExtractedEntity;
-import com.loantrading.matching.util.EncodingDetectorUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,9 +44,6 @@ public class MultiFormatDocumentExtractor {
                 text = wordExtractor.extractDocxText(documentContent);
             } else if (filename.toLowerCase().endsWith(".doc")) {
                 text = wordExtractor.extractDocText(documentContent);
-            } else if (filename.toLowerCase().endsWith(".txt")) {
-                java.nio.charset.Charset charset = EncodingDetectorUtil.detectCharset(documentContent);
-                text = new String(documentContent, charset);
             } else {
                 throw new ExtractionException("Unsupported file format: " + filename);
             }

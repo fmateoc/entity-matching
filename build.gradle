@@ -31,6 +31,7 @@ ext {
     byteBuddyVersion = '1.14.6'
     jacksonVersion = '2.15.2'
     jnaVersion = '5.13.0'
+    checkerQualVersion = '3.33.0'
 }
 
 dependencyManagement {
@@ -48,6 +49,7 @@ dependencyManagement {
         dependency "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
         dependency "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
         dependency "net.java.dev.jna:jna:${jnaVersion}"
+        dependency "org.checkerframework:checker-qual:${checkerQualVersion}"
     }
 }
 
@@ -102,9 +104,6 @@ dependencies {
         exclude group: 'org.slf4j', module: 'slf4j-api'
     }
     implementation 'ch.qos.logback:logback-core:1.4.11'
-
-    // ICU for advanced Unicode and globalization support
-    implementation 'com.ibm.icu:icu4j:77.1'
     
     // Monitoring and metrics
     implementation 'io.micrometer:micrometer-core:1.11.3'

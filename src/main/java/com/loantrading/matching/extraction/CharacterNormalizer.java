@@ -1,6 +1,5 @@
 package com.loantrading.matching.extraction;
 
-import com.ibm.icu.text.Transliterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +13,6 @@ public class CharacterNormalizer {
     private static final Logger logger = LoggerFactory.getLogger(CharacterNormalizer.class);
     
     private static final Map<String, String> REPLACEMENTS = new HashMap<>();
-    private static final Transliterator DIACRITIC_REMOVER = Transliterator.getInstance("Any-Latin; Latin-ASCII");
     
     static {
         // Smart quotes and apostrophes
@@ -47,8 +45,9 @@ public class CharacterNormalizer {
         
         String normalized = text;
 
-        // Handle diacritics using ICU4J
-        normalized = DIACRITIC_REMOVER.transliterate(normalized);
+        // Handle diacritics
+        normalized = java.text.Normalizer.normalize(normalized, java.text.Normalizer.Form.NFD);
+        normalized = normalized.replaceAll("\\p{M}", "");
         
         // Apply replacements
         for (Map.Entry<String, String> entry : REPLACEMENTS.entrySet()) {
