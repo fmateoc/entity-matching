@@ -233,6 +233,7 @@ public class EntityMatchingApplication {
             System.err.println("Commands:");
             System.err.println("  single <adf_file> [tax_form_file] - Process single document");
             System.err.println("  batch <directory> - Process all documents in directory");
+            System.err.println("  test - Run with test data");
             System.exit(1);
         }
         
@@ -258,6 +259,10 @@ public class EntityMatchingApplication {
                         System.exit(1);
                     }
                     processBatchDocuments(app, args[4]);
+                    break;
+
+                case "test":
+                    runTestMode(app);
                     break;
                     
                 default:
@@ -321,8 +326,29 @@ public class EntityMatchingApplication {
         System.out.println("Processed " + results.size() + " documents");
         System.out.println("Report saved to: " + reportFile);
     }
+
+    private static void runTestMode(EntityMatchingApplication app) throws Exception {
+        System.out.println("Running in test mode with sample data...");
+
+        byte[] testContent1 = app.getClass().getClassLoader().getResourceAsStream("test_adf_1.txt").readAllBytes();
+        byte[] testContent2 = app.getClass().getClassLoader().getResourceAsStream("test_adf_2.txt").readAllBytes();
+
+        ProcessingResult result = app.processWithTaxForm(testContent1, "test_adf_1.txt", testContent2, "test_adf_2.txt");
+
+        System.out.println("\n=== TEST RESULT ===");
+        System.out.println("Decision: " + result.getDecision());
+
+        if (result.getSelectedMatch() != null) {
+            System.out.println("Best Match: " + result.getSelectedMatch().getMatchedEntity().getFullName());
+            System.out.println("Score: " + result.getSelectedMatch().getScore());
+            System.out.println("Confidence: " + result.getSelectedMatch().getConfidence());
+        }
+
+        app.saveResultToJson(result, "test_result.json");
+        System.out.println("\nTest results saved to: test_result.json");
+    }
     
-    
+
     /**
      * Inner class for batch reporting
      */

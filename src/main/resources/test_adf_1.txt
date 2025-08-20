@@ -1,0 +1,5 @@
+Legal Name: Test Company LLC
+MEI: US12345678
+EIN: 12-3456789
+Email: contact@testcompany.com
+Country: US
