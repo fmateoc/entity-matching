@@ -104,6 +104,12 @@ public class NameNormalizer {
         }
         
         String normalized = name.toLowerCase().trim();
+
+        // Perform Unicode normalization (NFKD) to decompose characters
+        normalized = java.text.Normalizer.normalize(normalized, java.text.Normalizer.Form.NFKD);
+
+        // Remove combining diacritical marks (accents, etc.)
+        normalized = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
         
         // Remove special characters but keep spaces, hyphens, and apostrophes
         normalized = normalized.replaceAll("[^a-z0-9\\s-']", " ");

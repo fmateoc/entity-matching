@@ -68,4 +68,13 @@ public class NameNormalizerTest {
         assertNull(components.tradeName);
         assertFalse(components.hasDBA());
     }
+
+    @Test
+    @DisplayName("Should correctly normalize names with Unicode characters and diacritics")
+    void testUnicodeNormalization() {
+        assertEquals("societe generale", nameNormalizer.normalize("Société Générale"));
+        assertEquals("munchener ruck", nameNormalizer.normalize("Münchener Rück"));
+        assertEquals("nestle", nameNormalizer.normalize("Nestlé"));
+        assertEquals("francois-philippe", nameNormalizer.normalize("François-Philippe"));
+    }
 }
