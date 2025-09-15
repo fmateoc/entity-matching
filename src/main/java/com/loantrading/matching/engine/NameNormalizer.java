@@ -104,8 +104,20 @@ public class NameNormalizer {
         }
         
         String normalized = name.toLowerCase().trim();
+
+        // Explicitly handle smart punctuation first
+        normalized = normalized.replaceAll("[\\u2018\\u2019]", "'"); // curly single quotes
+        normalized = normalized.replaceAll("[\\u201C\\u201D]", "\""); // curly double quotes
+        normalized = normalized.replaceAll("[\\u2013\\u2014]", "-"); // en and em dashes
+
+        // Perform Unicode normalization (NFKD) to decompose characters
+        normalized = java.text.Normalizer.normalize(normalized, java.text.Normalizer.Form.NFKD);
+
+        // Remove combining diacritical marks (accents, etc.)
+        normalized = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
         
         // Remove special characters but keep spaces, hyphens, and apostrophes
+        // Note: This will remove the standard double quotes converted in the step above.
         normalized = normalized.replaceAll("[^a-z0-9\\s-']", " ");
         
         // Expand common abbreviations

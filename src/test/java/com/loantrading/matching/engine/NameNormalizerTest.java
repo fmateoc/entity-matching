@@ -68,4 +68,22 @@ public class NameNormalizerTest {
         assertNull(components.tradeName);
         assertFalse(components.hasDBA());
     }
+
+    @Test
+    @DisplayName("Should correctly normalize names with Unicode characters and diacritics")
+    void testUnicodeNormalization() {
+        assertEquals("societe generale", nameNormalizer.normalize("Société Générale"));
+        assertEquals("munchener ruck", nameNormalizer.normalize("Münchener Rück"));
+        assertEquals("nestle", nameNormalizer.normalize("Nestlé"));
+        assertEquals("francois-philippe", nameNormalizer.normalize("François-Philippe"));
+    }
+
+    @Test
+    @DisplayName("Should normalize smart punctuation to standard ASCII")
+    void testSmartPunctuationNormalization() {
+        assertEquals("o'malley's", nameNormalizer.normalize("O’Malley’s")); // curly single quotes
+        assertEquals("test", nameNormalizer.normalize("“Test”")); // curly double quotes
+        assertEquals("alpha-beta", nameNormalizer.normalize("Alpha—Beta")); // em dash
+        assertEquals("gamma-delta", nameNormalizer.normalize("Gamma–Delta")); // en dash
+    }
 }
