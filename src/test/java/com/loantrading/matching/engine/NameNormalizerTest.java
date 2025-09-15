@@ -77,4 +77,13 @@ public class NameNormalizerTest {
         assertEquals("nestle", nameNormalizer.normalize("Nestlé"));
         assertEquals("francois-philippe", nameNormalizer.normalize("François-Philippe"));
     }
+
+    @Test
+    @DisplayName("Should normalize smart punctuation to standard ASCII")
+    void testSmartPunctuationNormalization() {
+        assertEquals("o'malley's", nameNormalizer.normalize("O’Malley’s")); // curly single quotes
+        assertEquals("test", nameNormalizer.normalize("“Test”")); // curly double quotes
+        assertEquals("alpha-beta", nameNormalizer.normalize("Alpha—Beta")); // em dash
+        assertEquals("gamma-delta", nameNormalizer.normalize("Gamma–Delta")); // en dash
+    }
 }
