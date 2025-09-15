@@ -18,10 +18,15 @@ Build an entity matching system that processes external forms (lender/trading pa
   - Standard LSTA/LMA forms and custom/non-standard formats
   - Contact information section: Multiple contacts with email addresses for matching purposes
   - Wire/payment instructions: Skip entirely (multiple currencies, complex extraction, minimal matching value)
-- **US Tax Forms**: Better source for legal names and EIN data (sometimes present)
-  - Same document format challenges as ADFs
-  - Higher quality legal name data
-  - More reliable EIN/Tax ID information
+- **US Tax Forms**: Better source for legal names and EIN data (sometimes present). These consist of a known set of specific, official IRS forms. The primary forms encountered are:
+  - Form W-9
+  - Form W-8BEN
+  - Form W-8BEN-E
+  - Form W-8ECI
+  - Form W-8EXP
+  - Form W-8IMY
+- **Fixed Layout**: Unlike ADFs, these tax forms have a fixed, standardized layout, even when provided as a scanned image. This allows for a more reliable, template-based data extraction approach.
+- **Data Quality**: While the layout is fixed, the forms may still contain OCR artifacts, handwritten notes, and other quality issues. However, they are generally a higher-quality source for legal names and Tax ID (EIN) information.
 - **Quality issues**: Manual corrections, handwritten annotations, OCR artifacts (same challenges across all input types)
 
 ### Cross-Source Validation
