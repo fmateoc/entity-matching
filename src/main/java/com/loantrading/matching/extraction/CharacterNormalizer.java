@@ -38,44 +38,69 @@ public class CharacterNormalizer {
     }
     
     /**
-     * Normalize text to handle various encoding and OCR issues
+     * Normalize text for Unicode, punctuation, and whitespace, without applying opinionated OCR fixes.
+     * This is useful for structured text that is not from a scanned document.
+     */
+    public String normalizeUnicodeAndPunctuation(String text) {
+        if (text == null) return "";
+
+        String normalized = text;
+
+        // Handle diacritics using ICU4J
+        normalized = DIACRITIC_REMOVER.transliterate(normalized);
+
+        // Apply replacements for smart quotes, dashes, and unicode spaces
+        normalized = normalized.replaceAll("[“”]", "\"");
+        normalized = normalized.replaceAll("[‘’]", "'");
+        normalized = normalized.replaceAll("[`´]", "'");
+        normalized = normalized.replaceAll("[—–]", "-");
+        normalized = normalized.replaceAll("[‒―]", "-");
+        normalized = normalized.replaceAll("[\\u00A0\\u2000-\\u200B\\u202F\\u205F\\u3000]", " ");
+
+        // Remove control and zero-width characters
+        normalized = normalized.replaceAll("[\\u0000-\\u001F\\u007F-\\u009F]", "");
+        normalized = normalized.replaceAll("[\\u200B-\\u200D\\uFEFF]", "");
+
+        // Normalize standard whitespace
+        normalized = normalized.replaceAll("\\s+", " ");
+
+        return normalized.trim();
+    }
+
+    /**
+     * Apply aggressive OCR error corrections.
+     * This should only be used on text known to be from OCR.
+     */
+    public String fixOcrErrors(String text) {
+        if (text == null) return "";
+        // Apply OCR-specific replacements
+        text = text.replaceAll("rn", "m");
+        text = text.replaceAll("l([0-9])", "1$1");
+        text = text.replaceAll("O([0-9])", "0$1");
+        text = text.replaceAll("([0-9])O", "$10");
+        text = text.replaceAll("([0-9])l", "$11");
+        text = fixOCRPunctuation(text);
+        return text;
+    }
+
+    /**
+     * Normalize text to handle various encoding and OCR issues.
+     * This is the master method that performs all normalization steps.
      */
     public String normalize(String text) {
         if (text == null) {
             return "";
         }
         
-        String normalized = text;
-
-        // Handle diacritics using ICU4J
-        normalized = DIACRITIC_REMOVER.transliterate(normalized);
-        
-        // Apply replacements
-        for (Map.Entry<String, String> entry : REPLACEMENTS.entrySet()) {
-            normalized = normalized.replaceAll(entry.getKey(), entry.getValue());
-        }
-        
-        // Remove control characters
-        normalized = normalized.replaceAll("[\\u0000-\\u001F\\u007F-\\u009F]", "");
-        
-        // Remove zero-width characters
-        normalized = normalized.replaceAll("[\\u200B-\\u200D\\uFEFF]", "");
-        
-        // Normalize whitespace
-        normalized = normalized.replaceAll("\\s+", " ");
-        
-        // Fix common OCR issues with punctuation
-        normalized = fixOCRPunctuation(normalized);
-        
-        // Trim
-        normalized = normalized.trim();
+        String normalized = normalizeUnicodeAndPunctuation(text);
+        normalized = fixOcrErrors(normalized);
         
         if (logger.isDebugEnabled() && !text.equals(normalized)) {
             logger.debug("Normalized {} characters to {} characters", 
                 text.length(), normalized.length());
         }
         
-        return normalized;
+        return normalized.trim(); // Re-trim after all operations
     }
     
     /**

@@ -1,5 +1,6 @@
 package com.loantrading.matching.engine;
 
+import com.loantrading.matching.extraction.CharacterNormalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,10 +9,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Normalizes entity names for comparison
+ * Normalizes entity names for comparison by applying general character normalization
+ * and then specific business rules for names.
  */
 public class NameNormalizer {
     private static final Logger logger = LoggerFactory.getLogger(NameNormalizer.class);
+    private final CharacterNormalizer characterNormalizer;
     
     // Comprehensive corporate forms
     private static final Set<String> CORPORATE_FORMS = new HashSet<>(Arrays.asList(
@@ -94,6 +97,10 @@ public class NameNormalizer {
         FUND_MANAGER_ALIASES.put("blackrock", "blackrock inc");
         FUND_MANAGER_ALIASES.put("vanguard", "vanguard group");
     }
+
+    public NameNormalizer() {
+        this.characterNormalizer = new CharacterNormalizer();
+    }
     
     /**
      * Normalize a general entity name
@@ -103,35 +110,27 @@ public class NameNormalizer {
             return "";
         }
         
-        String normalized = name.toLowerCase().trim();
+        // 1. Perform general character-level normalization (handles diacritics, smart quotes, etc.)
+        String normalized = characterNormalizer.normalizeUnicodeAndPunctuation(name);
 
-        // Explicitly handle smart punctuation first
-        normalized = normalized.replaceAll("[\\u2018\\u2019]", "'"); // curly single quotes
-        normalized = normalized.replaceAll("[\\u201C\\u201D]", "\""); // curly double quotes
-        normalized = normalized.replaceAll("[\\u2013\\u2014]", "-"); // en and em dashes
-
-        // Perform Unicode normalization (NFKD) to decompose characters
-        normalized = java.text.Normalizer.normalize(normalized, java.text.Normalizer.Form.NFKD);
-
-        // Remove combining diacritical marks (accents, etc.)
-        normalized = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+        // 2. Convert to lowercase for case-insensitive matching.
+        normalized = normalized.toLowerCase();
         
-        // Remove special characters but keep spaces, hyphens, and apostrophes
-        // Note: This will remove the standard double quotes converted in the step above.
+        // 3. Filter to the character set required for name matching (removes quotes, etc.)
         normalized = normalized.replaceAll("[^a-z0-9\\s-']", " ");
         
-        // Expand common abbreviations
+        // 4. Expand common abbreviations specific to names
         for (Map.Entry<String, String> abbr : ABBREVIATIONS.entrySet()) {
             normalized = normalized.replaceAll("\\b" + abbr.getKey() + "\\b", abbr.getValue());
         }
         
-        // Remove corporate forms
+        // 5. Remove corporate forms
         normalized = CORPORATE_FORMS_PATTERN.matcher(normalized).replaceAll("");
         
-        // Remove articles
+        // 6. Remove articles
         normalized = normalized.replaceAll("\\b(the|a|an|and|of|in|for|by|with|from)\\b", "");
         
-        // Remove extra spaces
+        // 7. Final whitespace cleanup
         normalized = normalized.replaceAll("\\s+", " ").trim();
         
         return normalized;
