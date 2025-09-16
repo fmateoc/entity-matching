@@ -7,12 +7,19 @@ import com.google.common.cache.LoadingCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 /**
  * Repository for accessing LoanIQ database
@@ -47,18 +54,22 @@ public class LoanIQRepository {
     }
     
     private void prepareStatements() throws SQLException {
-        Properties queries = new Properties();
-        try (InputStream input = getClass().getClassLoader().getResourceAsStream("queries.properties")) {
-            if (input == null) {
-                throw new SQLException("Sorry, unable to find queries.properties");
+        try {
+            URI uri = getClass().getClassLoader().getResource("sql").toURI();
+            try (Stream<Path> paths = Files.walk(Paths.get(uri))) {
+                paths.filter(Files::isRegularFile)
+                        .forEach(path -> {
+                            try {
+                                String query = new String(Files.readAllBytes(path));
+                                String key = path.getFileName().toString().replace(".sql", "");
+                                statements.put(key, connection.prepareStatement(query));
+                            } catch (Exception e) {
+                                throw new RuntimeException("Failed to prepare statement for: " + path, e);
+                            }
+                        });
             }
-            queries.load(input);
-        } catch (java.io.IOException e) {
-            throw new SQLException("Error loading queries.properties", e);
-        }
-
-        for (String key : queries.stringPropertyNames()) {
-            statements.put(key, connection.prepareStatement(queries.getProperty(key)));
+        } catch (Exception e) {
+            throw new SQLException("Error loading queries from sql directory", e);
         }
     }
     
