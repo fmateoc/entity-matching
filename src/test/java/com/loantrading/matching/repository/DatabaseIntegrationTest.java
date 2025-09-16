@@ -1,5 +1,6 @@
 package com.loantrading.matching.repository;
 
+import com.loantrading.matching.entity.LoanIQEntity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,27 +11,29 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DatabaseIntegrationTest {
 
     private Connection connection;
+    private LoanIQRepository repository;
 
     @BeforeEach
     public void setUp() throws SQLException {
-        // Use H2 in-memory database with a unique name for each test run
-        // MODE=PostgreSQL is used for compatibility
         connection = DriverManager.getConnection("jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
         createSchema();
+        repository = new LoanIQRepository(connection);
     }
 
     @AfterEach
     public void tearDown() throws SQLException {
-        if (connection != null && !connection.isClosed()) {
-            connection.close();
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("DROP TABLE IF EXISTS entity_locations");
+            statement.execute("DROP TABLE IF EXISTS entities");
         }
+        repository.close();
     }
 
     private void createSchema() throws SQLException {
@@ -48,28 +51,56 @@ public class DatabaseIntegrationTest {
                     "country_code VARCHAR(2), " +
                     "legal_address TEXT, " +
                     "tax_address TEXT, " +
-                    "last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                    "UNIQUE (short_name)" +
-                    ")");
+                    "last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
+
+            statement.execute("CREATE TABLE IF NOT EXISTS entity_locations (" +
+                    "location_id BIGINT PRIMARY KEY, " +
+                    "parent_customer_id BIGINT, " +
+                    "mei VARCHAR(10), " +
+                    "lei VARCHAR(20), " +
+                    "ein VARCHAR(20), " +
+                    "FOREIGN KEY (location_id) REFERENCES entities(entity_id), " +
+                    "FOREIGN KEY (parent_customer_id) REFERENCES entities(entity_id))");
+        }
+    }
+
+    private void insertTestData() throws SQLException {
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute("INSERT INTO entities (entity_id, full_name, short_name, mei, lei, ein) VALUES " +
+                    "(1, 'Test Corp', 'TestCo', 'MEI123', 'LEI456', 'EIN789')");
+            stmt.execute("INSERT INTO entities (entity_id, full_name, short_name) VALUES " +
+                    "(2, 'Location LLC', 'LocLLC')");
+            stmt.execute("INSERT INTO entity_locations (location_id, parent_customer_id, mei, lei, ein) VALUES " +
+                    "(2, 1, 'MEI123', 'LEI456', 'EIN789')");
         }
     }
 
     @Test
-    public void shouldInsertAndRetrieveEntity() throws SQLException {
-        // Insert a sample entity
-        String fullName = "Test Entity Inc.";
-        try (PreparedStatement ps = connection.prepareStatement("INSERT INTO entities (full_name) VALUES (?)")) {
-            ps.setString(1, fullName);
-            int rowsAffected = ps.executeUpdate();
-            assertEquals(1, rowsAffected);
-        }
+    public void testFindById() throws SQLException {
+        insertTestData();
+        LoanIQEntity entity = repository.findById(1L);
+        assertNotNull(entity);
+        assertEquals("Test Corp", entity.getFullName());
+    }
 
-        // Retrieve the entity and verify
-        try (PreparedStatement ps = connection.prepareStatement("SELECT full_name FROM entities WHERE full_name = ?")) {
-            ps.setString(1, fullName);
-            ResultSet rs = ps.executeQuery();
-            assertTrue(rs.next(), "Should find the inserted entity");
-            assertEquals(fullName, rs.getString("full_name"));
-        }
+    @Test
+    public void testFindByMei() throws SQLException {
+        insertTestData();
+        List<LoanIQEntity> entities = repository.findByMEI("MEI123");
+        assertEquals(2, entities.size());
+    }
+
+    @Test
+    public void testFindByLei() throws SQLException {
+        insertTestData();
+        List<LoanIQEntity> entities = repository.findByLEI("LEI456");
+        assertEquals(2, entities.size());
+    }
+
+    @Test
+    public void testFindByEin() throws SQLException {
+        insertTestData();
+        List<LoanIQEntity> entities = repository.findByEIN("EIN789");
+        assertEquals(2, entities.size());
     }
 }
