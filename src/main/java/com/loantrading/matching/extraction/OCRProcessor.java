@@ -21,7 +21,7 @@ public class OCRProcessor {
     
     public OCRProcessor() {
         this.tesseract = new Tesseract();
-        this.tesseract.setDatapath("/usr/share/tesseract-ocr/4.00/tessdata");
+        this.tesseract.setDatapath("/usr/share/tesseract-ocr/5/tessdata");
         this.tesseract.setLanguage("eng");
         this.tesseract.setPageSegMode(1); // Automatic page segmentation with OSD
         this.tesseract.setOcrEngineMode(1); // Neural nets LSTM engine

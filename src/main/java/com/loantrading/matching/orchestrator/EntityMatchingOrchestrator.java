@@ -83,10 +83,21 @@ public class EntityMatchingOrchestrator {
                     result.addAuditEntry("Tax form extraction timed out");
                 }
             }
+
+            // Stage 4: Pre-validate document pair
+            if (!preValidateDocumentPair(adfData, taxFormData, result)) {
+                long processingTime = System.currentTimeMillis() - startTime;
+                result.setProcessingTimeMs(processingTime);
+                return result; // Halt processing if documents are for different entities
+            }
+
+            // Stage 5: Consolidate data based on the Source of Truth hierarchy
+            ExtractedEntity masterEntity = createMasterEntity(adfData, taxFormData);
+            result.addAuditEntry("Consolidated entity data based on source of truth hierarchy.");
             
-            // Stage 4: Find matches
-            result.addAuditEntry("Starting entity matching");
-            List<MatchResult> matches = matchingEngine.findMatches(adfData, taxFormData);
+            // Stage 6: Find matches
+            result.addAuditEntry("Starting entity matching with consolidated data.");
+            List<MatchResult> matches = matchingEngine.findMatches(masterEntity, taxFormData);
             
             // Add top 5 matches to result
             for (int i = 0; i < Math.min(5, matches.size()); i++) {
@@ -209,6 +220,52 @@ public class EntityMatchingOrchestrator {
                 return "NO_MATCH";
             }
         }
+    }
+
+    private ExtractedEntity createMasterEntity(ExtractedEntity adfData, ExtractedEntity taxFormData) {
+        if (taxFormData == null) {
+            return adfData; // No tax form, so ADF is the master.
+        }
+
+        ExtractedEntity masterEntity = new ExtractedEntity();
+
+        // Tax form is the source of truth for Legal Name and EIN.
+        masterEntity.setLegalName(taxFormData.getLegalName() != null ? taxFormData.getLegalName() : adfData.getLegalName());
+        masterEntity.setEin(taxFormData.getEin() != null ? taxFormData.getEin() : adfData.getEin());
+
+        // ADF is the source of truth for all other fields.
+        masterEntity.setFundManager(adfData.getFundManager());
+        masterEntity.setMei(adfData.getMei());
+        masterEntity.setLei(adfData.getLei());
+        masterEntity.setDebtDomainId(adfData.getDebtDomainId());
+        masterEntity.setCountryCode(adfData.getCountryCode());
+        masterEntity.setContactEmails(adfData.getContactEmails());
+        masterEntity.setEmailDomain(adfData.getEmailDomain());
+
+        logger.info("Created master entity. Legal Name: '{}', EIN: '{}' (from Tax Form)", masterEntity.getLegalName(), masterEntity.getEin());
+
+        return masterEntity;
+    }
+
+    private boolean preValidateDocumentPair(ExtractedEntity adfData, ExtractedEntity taxFormData, ProcessingResult result) {
+        if (adfData == null || taxFormData == null) {
+            return true; // Nothing to compare
+        }
+
+        String adfEin = adfData.getEin();
+        String taxEin = taxFormData.getEin();
+
+        if (adfEin != null && taxEin != null && !adfEin.equals(taxEin)) {
+            String errorMessage = String.format("Critical Error: EIN mismatch between documents. ADF EIN: %s, Tax Form EIN: %s. Halting processing.", adfEin, taxEin);
+            logger.error(errorMessage);
+            result.setDecision("ERROR");
+            result.addAuditEntry(errorMessage);
+            result.addMetadata("pre-validation-error", "ein_mismatch");
+            return false;
+        }
+
+        result.addAuditEntry("Pre-validation successful: Documents appear to be for the same entity.");
+        return true;
     }
     
     /**

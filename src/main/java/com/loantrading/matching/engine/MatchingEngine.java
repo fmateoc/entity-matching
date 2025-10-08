@@ -58,22 +58,29 @@ public class MatchingEngine {
                 }
             }
             
-            // Step 2: Try fuzzy name matching if needed
-            if (allMatches.size() < 5) {
+            // Step 2: Enhance all current matches with a fuzzy name score
+            for (MatchResult match : allMatches) {
+                MatchResult nameMatch = fuzzyNameMatcher.match(extracted, match.getMatchedEntity());
+                match.getScoreBreakdown().putAll(nameMatch.getScoreBreakdown());
+                match.getEvidence().addAll(nameMatch.getEvidence());
+            }
+
+            // If we still have no good matches, try to find some by name
+            if (allMatches.isEmpty()) {
                 List<LoanIQEntity> candidates = repository.findCandidatesByName(
                     extracted.getLegalName(), extracted.getFundManager()
                 );
                 
-                logger.debug("Found {} name-based candidates", candidates.size());
+                logger.debug("No identifier matches, found {} name-based candidates", candidates.size());
                 
                 for (LoanIQEntity candidate : candidates) {
                     if (!processedEntityIds.contains(candidate.getEntityId())) {
                         MatchResult fuzzyMatch = fuzzyNameMatcher.match(extracted, candidate);
-                        if (fuzzyMatch.getScore() > 50) {
+                        if (fuzzyMatch.getScore() > 50) { // Only consider reasonably good name matches
                             fuzzyMatch.setMatchStrategy("FUZZY_NAME");
                             allMatches.add(fuzzyMatch);
                             processedEntityIds.add(candidate.getEntityId());
-                            logger.debug("Added fuzzy match: {} (score: {})",
+                            logger.debug("Added new fuzzy match: {} (score: {})",
                                 candidate.getFullName(), fuzzyMatch.getScore());
                         }
                     }

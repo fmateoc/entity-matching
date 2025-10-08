@@ -51,6 +51,7 @@ public class NameNormalizer {
         ABBREVIATIONS.put("svc", "service");
         ABBREVIATIONS.put("tech", "technology");
         ABBREVIATIONS.put("assoc", "associates");
+        ABBREVIATIONS.put("ave", "avenue");
         ABBREVIATIONS.put("bros", "brothers");
         ABBREVIATIONS.put("dept", "department");
         ABBREVIATIONS.put("div", "division");

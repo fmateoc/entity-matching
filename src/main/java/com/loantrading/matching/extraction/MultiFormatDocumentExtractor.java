@@ -6,7 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Main document extractor that handles multiple formats
+ * Main document extractor that handles multiple formats.
+ * It now intelligently delegates parsing to a specialized parser based on the document type (digital vs. scanned/OCR).
  */
 public class MultiFormatDocumentExtractor {
     private static final Logger logger = LoggerFactory.getLogger(MultiFormatDocumentExtractor.class);
@@ -14,29 +15,31 @@ public class MultiFormatDocumentExtractor {
     private final PDFExtractor pdfExtractor;
     private final WordDocumentExtractor wordExtractor;
     private final FieldParser fieldParser;
+    private final OcrFieldParser ocrFieldParser;
     private final OCRProcessor ocrProcessor;
-    private final CharacterNormalizer characterNormalizer;
-    
+
     public MultiFormatDocumentExtractor() {
         this.pdfExtractor = new PDFExtractor();
         this.wordExtractor = new WordDocumentExtractor();
         this.fieldParser = new FieldParser();
+        this.ocrFieldParser = new OcrFieldParser();
         this.ocrProcessor = new OCRProcessor();
-        this.characterNormalizer = new CharacterNormalizer();
     }
     
     public ExtractedEntity extract(byte[] documentContent, String filename) throws ExtractionException {
         String text;
+        boolean isOcr = false;
         double ocrConfidence = 1.0;
         
         try {
-            // Determine file type and extract text
+            // Step 1: Determine file type and extract raw text.
             if (filename.toLowerCase().endsWith(".pdf")) {
                 text = pdfExtractor.extractText(documentContent);
                 
-                // Check if PDF is scanned (no text or very little text)
+                // If the PDF has no selectable text, it's scanned. Use OCR.
                 if (text.trim().isEmpty() || text.length() < 100) {
                     logger.info("PDF appears to be scanned, performing OCR for: {}", filename);
+                    isOcr = true;
                     OCRResult ocrResult = ocrProcessor.performOCR(documentContent);
                     text = ocrResult.getText();
                     ocrConfidence = ocrResult.getConfidence();
@@ -52,13 +55,17 @@ public class MultiFormatDocumentExtractor {
                 throw new ExtractionException("Unsupported file format: " + filename);
             }
             
-            // Normalize characters to handle encoding issues
-            text = characterNormalizer.normalize(text);
+            // Step 2: Delegate to the appropriate parser.
+            ExtractedEntity entity;
+            if (isOcr) {
+                logger.debug("Delegating to OcrFieldParser.");
+                entity = ocrFieldParser.parse(text);
+            } else {
+                logger.debug("Delegating to standard FieldParser.");
+                entity = fieldParser.parseFields(text);
+            }
             
-            // Parse fields from the extracted text
-            ExtractedEntity entity = fieldParser.parseFields(text);
-            
-            // Adjust extraction confidence based on OCR confidence
+            // Step 3: Adjust final confidence based on OCR quality.
             entity.setExtractionConfidence(entity.getExtractionConfidence() * ocrConfidence);
             
             logger.info("Successfully extracted entity from {} with confidence {}", 

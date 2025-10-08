@@ -4,10 +4,10 @@ package com.loantrading.matching.entity;
  * Enum representing the severity of discrepancies found during matching
  */
 public enum DiscrepancySeverity {
-    CRITICAL("Critical", "Immediate review required", -25),
-    HIGH("High", "Significant discrepancy", -15),
-    MEDIUM("Medium", "Notable discrepancy", -10),
-    LOW("Low", "Minor discrepancy", -5);
+    CRITICAL("Critical", "Immediate review required", 15),
+    HIGH("High", "Significant discrepancy", 8),
+    MEDIUM("Medium", "Notable discrepancy", 4),
+    LOW("Low", "Minor discrepancy", 1);
     
     private final String displayName;
     private final String description;

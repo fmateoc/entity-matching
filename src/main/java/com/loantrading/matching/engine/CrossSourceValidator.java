@@ -1,24 +1,30 @@
 package com.loantrading.matching.engine;
 
-import com.loantrading.matching.entity.*;
+import com.loantrading.matching.entity.ExtractedEntity;
+import com.loantrading.matching.entity.MatchResult;
 import org.apache.commons.text.similarity.JaroWinklerDistance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Validates matches using cross-source data (ADF vs Tax Form)
+ * Validates matches using cross-source data (ADF vs Tax Form) and provides score boosts.
+ * This class does NOT create discrepancies; that is the sole responsibility of the DiscrepancyDetector.
  */
 public class CrossSourceValidator {
     private static final Logger logger = LoggerFactory.getLogger(CrossSourceValidator.class);
     
     private final JaroWinklerDistance jaroWinkler;
+    private final NameNormalizer nameNormalizer;
     
     public CrossSourceValidator() {
         this.jaroWinkler = new JaroWinklerDistance();
+        this.nameNormalizer = new NameNormalizer();
     }
     
     /**
-     * Validate and enhance match using tax form data
+     * Validate and enhance match using tax form data.
+     * This method only provides positive score boosts for consistent data
+     * and does not create discrepancies.
      */
     public void validate(MatchResult match, ExtractedEntity adf, ExtractedEntity taxForm) {
         if (taxForm == null) {
@@ -27,20 +33,34 @@ public class CrossSourceValidator {
         
         double boost = 0;
         
-        // Check EIN consistency
-        boost += validateEIN(match, adf, taxForm);
+        // Boost for consistent EIN between forms.
+        if (adf.getEin() != null && taxForm.getEin() != null && adf.getEin().equals(taxForm.getEin())) {
+            boost += 10;
+            match.addEvidence("EIN consistent between ADF and tax form");
+        }
+
+        // Boost for consistent legal name between forms.
+        if (adf.getLegalName() != null && taxForm.getLegalName() != null) {
+            String normalizedAdfName = nameNormalizer.normalize(adf.getLegalName());
+            String normalizedTaxName = nameNormalizer.normalize(taxForm.getLegalName());
+            double nameSimilarity = jaroWinkler.apply(normalizedAdfName, normalizedTaxName);
+            if (nameSimilarity > 0.95) {
+                boost += 8;
+                match.addEvidence("Legal name highly consistent across forms");
+            }
+        }
         
-        // Check legal name consistency
-        boost += validateLegalName(match, adf, taxForm);
+        // Boost for consistent country across forms.
+        if (adf.getCountryCode() != null && taxForm.getCountryCode() != null && adf.getCountryCode().equals(taxForm.getCountryCode())) {
+            boost += 2;
+            match.addEvidence("Country consistent across forms");
+        }
         
-        // Check country consistency
-        boost += validateCountry(match, adf, taxForm);
-        
-        // Check for additional identifiers in tax form
+        // Boost for additional identifiers from tax form that match the DB record.
         boost += validateAdditionalIdentifiers(match, adf, taxForm);
         
-        // Apply boost to match score
-        if (boost != 0) {
+        // Apply final boost to match score
+        if (boost > 0) {
             double newScore = Math.max(0, Math.min(100, match.getScore() + boost));
             match.setScore(newScore);
             match.addScoreComponent("tax_form_validation", boost);
@@ -48,116 +68,6 @@ public class CrossSourceValidator {
             logger.debug("Cross-source validation adjusted score by {} to {}",
                 boost, newScore);
         }
-    }
-    
-    private double validateEIN(MatchResult match, ExtractedEntity adf, ExtractedEntity taxForm) {
-        double boost = 0;
-        
-        if (taxForm.getEin() != null && adf.getEin() != null) {
-            if (taxForm.getEin().equals(adf.getEin())) {
-                boost += 10;
-                match.addEvidence("EIN consistent between ADF and tax form");
-                logger.debug("EIN match between forms: {}", taxForm.getEin());
-            } else {
-                boost -= 15;
-                match.addDiscrepancy(new Discrepancy(
-                    "EIN_MISMATCH_FORMS",
-                    DiscrepancySeverity.CRITICAL,
-                    String.format("EIN differs: ADF=%s, Tax=%s", adf.getEin(), taxForm.getEin())
-                ));
-                logger.warn("EIN mismatch: ADF={}, Tax={}", adf.getEin(), taxForm.getEin());
-            }
-        } else if (taxForm.getEin() != null && adf.getEin() == null) {
-            // Use tax form EIN as more reliable
-            boost += 5;
-            match.addEvidence("EIN from tax form used for validation: " + taxForm.getEin());
-            
-            // Check if tax form EIN matches LoanIQ entity
-            if (match.getMatchedEntity().getEin() != null) {
-                if (match.getMatchedEntity().getEin().equals(taxForm.getEin())) {
-                    boost += 10;
-                    match.addEvidence("Tax form EIN matches LoanIQ");
-                } else {
-                    boost -= 10;
-                    match.addDiscrepancy(new Discrepancy(
-                        "EIN_MISMATCH_TAX_LOANIQ",
-                        DiscrepancySeverity.HIGH,
-                        "Tax form EIN doesn't match LoanIQ"
-                    ));
-                }
-            }
-        }
-        
-        return boost;
-    }
-    
-    private double validateLegalName(MatchResult match, ExtractedEntity adf, ExtractedEntity taxForm) {
-        double boost = 0;
-        
-        if (taxForm.getLegalName() != null && adf.getLegalName() != null) {
-            double nameSimilarity = jaroWinkler.apply(
-                taxForm.getLegalName(), adf.getLegalName()
-            );
-            
-            if (nameSimilarity > 0.9) {
-                boost += 8;
-                match.addEvidence("Legal name highly consistent across forms");
-            } else if (nameSimilarity > 0.8) {
-                boost += 3;
-                match.addEvidence("Legal name consistent across forms");
-            } else if (nameSimilarity < 0.7) {
-                boost -= 10;
-                match.addDiscrepancy(new Discrepancy(
-                    "LEGAL_NAME_MISMATCH_FORMS",
-                    DiscrepancySeverity.HIGH,
-                    String.format("Legal name similarity only %.2f", nameSimilarity)
-                ));
-                logger.warn("Legal name mismatch between forms: similarity={}", nameSimilarity);
-            }
-            
-            // Also check against LoanIQ
-            if (match.getMatchedEntity().getFullName() != null) {
-                double loaniqSimilarity = jaroWinkler.apply(
-                    taxForm.getLegalName(),
-                    match.getMatchedEntity().getFullName()
-                );
-                
-                if (loaniqSimilarity > 0.85) {
-                    boost += 5;
-                    match.addEvidence("Tax form name matches LoanIQ");
-                }
-            }
-        }
-        
-        return boost;
-    }
-    
-    private double validateCountry(MatchResult match, ExtractedEntity adf, ExtractedEntity taxForm) {
-        double boost = 0;
-        
-        if (taxForm.getCountryCode() != null && adf.getCountryCode() != null) {
-            if (!taxForm.getCountryCode().equals(adf.getCountryCode())) {
-                match.addDiscrepancy(new Discrepancy(
-                    "COUNTRY_MISMATCH_FORMS",
-                    DiscrepancySeverity.MEDIUM,
-                    String.format("Country differs: ADF=%s, Tax=%s",
-                        adf.getCountryCode(), taxForm.getCountryCode())
-                ));
-                boost -= 5;
-            } else {
-                boost += 2;
-                match.addEvidence("Country consistent across forms");
-            }
-        }
-        
-        // Check tax country if different from legal country
-        if (taxForm.getTaxCountryCode() != null && 
-            !taxForm.getTaxCountryCode().equals(taxForm.getCountryCode())) {
-            match.addEvidence("Tax country differs from legal country: " + 
-                taxForm.getTaxCountryCode());
-        }
-        
-        return boost;
     }
     
     private double validateAdditionalIdentifiers(MatchResult match, ExtractedEntity adf, 
