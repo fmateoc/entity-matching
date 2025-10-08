@@ -57,12 +57,13 @@ public class CharacterNormalizer {
         normalized = normalized.replaceAll("[‒―]", "-");
         normalized = normalized.replaceAll("[\\u00A0\\u2000-\\u200B\\u202F\\u205F\\u3000]", " ");
 
-        // Remove control and zero-width characters
-        normalized = normalized.replaceAll("[\\u0000-\\u001F\\u007F-\\u009F]", "");
+        // Remove control characters, but preserve tab, newline, and carriage return
+        normalized = normalized.replaceAll("[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F-\\u009F]", "");
         normalized = normalized.replaceAll("[\\u200B-\\u200D\\uFEFF]", "");
 
-        // Normalize standard whitespace
-        normalized = normalized.replaceAll("\\s+", " ");
+        // Normalize line endings to a single LF character, and horizontal whitespace to a single space
+        normalized = normalized.replaceAll("\\r\\n?", "\n");
+        normalized = normalized.replaceAll("[ \\t]+", " ");
 
         return normalized.trim();
     }
@@ -140,8 +141,8 @@ public class CharacterNormalizer {
         // Remove quotes
         name = name.replaceAll("[\"\']", "");
         
-        // Fix spacing
-        name = name.replaceAll("\\s+", " ");
+        // Fix horizontal spacing, preserving newlines
+        name = name.replaceAll("[ \\t]+", " ");
         
         return name.trim();
     }

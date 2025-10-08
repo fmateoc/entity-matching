@@ -79,13 +79,13 @@ public class ConfidenceScorer {
         
         // MEI is most reliable
         if (components.containsKey("mei_match")) {
-            score = 40;
+            score = 50; // Increased from 40
         } else if (components.containsKey("lei_match")) {
-            score = 35;
+            score = 45; // Increased from 35
         } else if (components.containsKey("ein_match")) {
-            score = 30;
+            score = 40; // Increased from 30
         } else if (components.containsKey("debt_domain_id_match")) {
-            score = 25;
+            score = 30; // Increased from 25
         }
         
         // Add any identifier boosts

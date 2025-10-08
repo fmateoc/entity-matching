@@ -26,6 +26,7 @@ public class PDFExtractor {
         try (PDDocument document = PDDocument.load(pdfContent)) {
             PDFTextStripper stripper = new PDFTextStripper();
             stripper.setSortByPosition(true);
+            stripper.setLineSeparator("\n"); // Explicitly preserve line breaks
             stripper.setStartPage(1);
             stripper.setEndPage(Math.min(MAX_PAGES, document.getNumberOfPages()));
             
