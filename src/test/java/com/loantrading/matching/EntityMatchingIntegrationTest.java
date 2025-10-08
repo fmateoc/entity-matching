@@ -20,6 +20,8 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -52,29 +54,14 @@ public class EntityMatchingIntegrationTest {
 
     private static void createTestSchema(Connection conn) throws SQLException {
         try (Statement statement = conn.createStatement()) {
-            statement.execute("CREATE TABLE IF NOT EXISTS entities (" +
-                    "entity_id BIGSERIAL PRIMARY KEY, " +
-                    "full_name VARCHAR(500) NOT NULL, " +
-                    "short_name VARCHAR(200), " +
-                    "ultimate_parent VARCHAR(500), " +
-                    "mei VARCHAR(10), " +
-                    "lei VARCHAR(20), " +
-                    "ein VARCHAR(20), " +
-                    "debt_domain_id VARCHAR(20), " +
-                    "email_domain VARCHAR(100), " +
-                    "country_code VARCHAR(2), " +
-                    "legal_address TEXT, " +
-                    "tax_address TEXT, " +
-                    "last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
-
-            statement.execute("CREATE TABLE IF NOT EXISTS entity_locations (" +
-                    "location_id BIGINT PRIMARY KEY, " +
-                    "parent_customer_id BIGINT, " +
-                    "mei VARCHAR(10), " +
-                    "lei VARCHAR(20), " +
-                    "ein VARCHAR(20), " +
-                    "FOREIGN KEY (location_id) REFERENCES entities(entity_id), " +
-                    "FOREIGN KEY (parent_customer_id) REFERENCES entities(entity_id))");
+            InputStream is = EntityMatchingIntegrationTest.class.getClassLoader().getResourceAsStream("schema.sql");
+            if (is == null) {
+                throw new RuntimeException("Cannot find schema.sql in classpath");
+            }
+            String schema = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            statement.execute(schema);
+        } catch (IOException e) {
+            throw new SQLException("Failed to read schema.sql", e);
         }
     }
 
