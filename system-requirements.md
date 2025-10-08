@@ -35,6 +35,23 @@ Build an entity matching system that processes external forms (lender/trading pa
 - **Email domain analysis**: Extract domains from ADF contact information (lender contacts only, filter third-party service providers)
 - **Consistency checking**: Flag discrepancies between different input sources for same entity
 
+### Source of Truth Hierarchy
+To resolve conflicts between different documents for the same entity, the system must adhere to the following hierarchy of trust. Data from a higher-authority source should take precedence over data from a lower-authority source.
+
+1.  **Tax Forms (e.g., W-9, W-8BEN-E)**
+    *   **Highest Authority For:** Legal Name, EIN (or other national tax identifier).
+    *   **Recency Rule:** A more recent tax form should take precedence over an older one, particularly for the Legal Name, to account for official name changes over time.
+
+2.  **Incorporation Forms**
+    *   **Second Highest Authority For:** Legal Name, EIN.
+    *   **Discrepancy Rule:** If an incorporation form's data conflicts with a newer tax form, this must be flagged as a `CRITICAL` discrepancy.
+
+3.  **Admin Details Forms (ADF)**
+    *   **Primary Source For:** Identifiers such as MEI and LEI.
+    *   **Lowest Authority For:** Legal Name and Fund Manager Name. This data should be considered descriptive and used for matching, but it should be overridden by data from Tax or Incorporation forms in case of conflict.
+
+This hierarchy is a critical business rule and must be reflected in the matching and discrepancy detection logic.
+
 ### Document Processing Challenges
 - **OCR complexity**: Scanned PDFs with varying quality across all document types
 - **Manual annotations**: Handwritten corrections over printed forms
