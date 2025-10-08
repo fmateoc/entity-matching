@@ -304,6 +304,21 @@ task createSchema {
         CREATE INDEX idx_locations_mei ON entity_locations(mei);
         CREATE INDEX idx_locations_lei ON entity_locations(lei);
         CREATE INDEX idx_locations_ein ON entity_locations(ein);
+
+        -- Table to store high-confidence, persistent matches to avoid re-computation
+        CREATE TABLE IF NOT EXISTS persisted_matches (
+            match_id BIGSERIAL PRIMARY KEY,
+            source_entity_type VARCHAR(100) NOT NULL,
+            source_entity_identifier VARCHAR(500) NOT NULL,
+            target_entity_id BIGINT NOT NULL,
+            confidence_score DOUBLE PRECISION NOT NULL,
+            matched_by VARCHAR(255),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE (source_entity_type, source_entity_identifier)
+        );
+
+        CREATE INDEX idx_persisted_matches_source ON persisted_matches(source_entity_type, source_entity_identifier);
         """
     }
 }
