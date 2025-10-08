@@ -1,5 +1,6 @@
-package com.loantrading.matching.engine;
+package com.loantrading.matching.framework.preprocessor;
 
+import com.loantrading.matching.framework.preprocessor.NameNormalizer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
