@@ -191,6 +191,27 @@ public class EntityMatchingIntegrationTest {
         assertNull(result.getSelectedMatch(), "There should be no selected match for a new entity");
     }
 
+    @Test
+    void testEinMismatchHaltsProcessing() throws IOException {
+        // 1. Define data with conflicting EINs
+        String legalName = "Pine Street Fund V, L.P.";
+        String adfEin = "12-3456789";
+        String taxFormEin = "99-9999999"; // Different EIN
+
+        // 2. Generate documents with conflicting EINs
+        byte[] adfPdf = createPdf("ADF_Conflict.pdf", "Legal Name: " + legalName, "EIN: " + adfEin);
+        byte[] taxFormDocx = createDocx("TaxForm_Conflict.docx", "Legal Name: " + legalName, "Tax ID: " + taxFormEin);
+
+        // 3. Process documents
+        ProcessingResult result = orchestrator.processDocuments(adfPdf, "ADF_Conflict.pdf", taxFormDocx, "TaxForm_Conflict.docx");
+
+        // 4. Assert results
+        assertNotNull(result, "Processing result should not be null");
+        assertEquals("ERROR", result.getDecision(), "Decision should be ERROR for conflicting EINs");
+        assertTrue(result.getAuditTrail().stream().anyMatch(s -> s.contains("Critical Error: EIN mismatch between documents")), "Audit trail should contain EIN mismatch error");
+        assertNull(result.getSelectedMatch(), "There should be no selected match when processing is halted");
+    }
+
     private byte[] createImagePdf(String filename, String... lines) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] imageBytes = createImageFromText(lines);

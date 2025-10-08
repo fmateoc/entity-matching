@@ -48,7 +48,8 @@ To resolve conflicts between different documents for the same entity, the system
 
 3.  **Admin Details Forms (ADF)**
     *   **Primary Source For:** Identifiers such as MEI and LEI.
-    *   **Lowest Authority For:** Legal Name and Fund Manager Name. This data should be considered descriptive and used for matching, but it should be overridden by data from Tax or Incorporation forms in case of conflict.
+    *   **Lowest Authority For:** Legal Name. This data should be considered descriptive and used for matching, but it should be overridden by data from Tax or Incorporation forms in case of conflict.
+    *   **Sole Source For:** Fund Manager Name. While the representation may be informal, the ADF is the only document that provides this information.
 
 This hierarchy is a critical business rule and must be reflected in the matching and discrepancy detection logic.
 
