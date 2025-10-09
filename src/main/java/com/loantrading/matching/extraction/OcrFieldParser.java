@@ -106,8 +106,11 @@ public class OcrFieldParser {
         }
 
         if (!legalName.isEmpty()) {
-            entity.setLegalName(normalizer.cleanEntityName(legalName));
-            logger.debug("Extracted Legal Name from OCR: {}", entity.getLegalName());
+            String rawName = legalName.trim();
+            String normalizedName = normalizer.cleanEntityName(rawName);
+            entity.setRawLegalName(rawName);
+            entity.setLegalName(normalizedName);
+            logger.debug("Extracted Legal Name from OCR. Raw: '{}', Normalized: '{}'", rawName, normalizedName);
         }
 
         // The fund manager is often the second-longest line, if it exists.

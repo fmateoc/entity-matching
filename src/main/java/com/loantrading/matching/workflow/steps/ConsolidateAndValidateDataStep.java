@@ -69,6 +69,7 @@ public class ConsolidateAndValidateDataStep implements IWorkflowStep {
 
         // Tax form is the source of truth for Legal Name and EIN.
         masterEntity.setLegalName(taxFormData.getLegalName() != null ? taxFormData.getLegalName() : adfData.getLegalName());
+        masterEntity.setRawLegalName(taxFormData.getRawLegalName() != null ? taxFormData.getRawLegalName() : adfData.getRawLegalName());
         masterEntity.setEin(taxFormData.getEin() != null ? taxFormData.getEin() : adfData.getEin());
 
         // ADF is the source of truth for all other fields.

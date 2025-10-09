@@ -6,6 +6,7 @@ import java.util.*;
  * Represents an entity extracted from external documents (ADF or Tax forms)
  */
 public class ExtractedEntity {
+    private String rawLegalName;
     private String legalName;
     private String fundManager;
     private String mei;
@@ -29,6 +30,14 @@ public class ExtractedEntity {
     }
     
     // Getters and setters
+    public String getRawLegalName() {
+        return rawLegalName;
+    }
+
+    public void setRawLegalName(String rawLegalName) {
+        this.rawLegalName = rawLegalName;
+    }
+
     public String getLegalName() { 
         return legalName; 
     }

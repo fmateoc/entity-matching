@@ -1,7 +1,9 @@
 package com.loantrading.matching.workflow;
 
 import com.loantrading.matching.detection.EntityTypeDetector;
+import com.loantrading.matching.discrepancy.DiscrepancyDetector;
 import com.loantrading.matching.extraction.MultiFormatDocumentExtractor;
+import com.loantrading.matching.framework.preprocessor.NameNormalizer;
 import com.loantrading.matching.framework.match.IMatchingStrategy;
 import com.loantrading.matching.framework.persistence.DbMatchRepository;
 import com.loantrading.matching.framework.persistence.IMatchRepository;
@@ -63,6 +65,9 @@ public class EntityMatchingWorkflow {
 
         // --- Workflow Assembly ---
         // Assemble the full sequence of steps for the end-to-end process.
+        NameNormalizer nameNormalizer = new NameNormalizer();
+        DiscrepancyDetector discrepancyDetector = new DiscrepancyDetector(nameNormalizer);
+
         this.workflow = new SequentialWorkflow(List.of(
                 new InitializeProcessingStep(),
                 new ExtractAdfDataStep(extractor),
@@ -71,7 +76,7 @@ public class EntityMatchingWorkflow {
                 new ConsolidateAndValidateDataStep(),
                 routingStep, // This single step handles all matching logic.
                 new SelectBestMatchStep(),
-                new DetectDiscrepanciesStep(new com.loantrading.matching.discrepancy.DiscrepancyDetector()),
+                new DetectDiscrepanciesStep(discrepancyDetector),
                 new ApplyDiscrepancyPenaltiesStep(),
                 new DetermineFinalDecisionStep(),
                 new FinalizeProcessingStep()
