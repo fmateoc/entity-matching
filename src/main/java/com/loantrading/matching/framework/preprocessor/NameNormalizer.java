@@ -44,6 +44,19 @@ public class NameNormalizer implements INormalizer<String> {
         }
     }
 
+    /**
+     * Inner class to hold the core name and the corporate form.
+     */
+    public static class NameComponents {
+        public final String coreName;
+        public final String corporateForm;
+
+        public NameComponents(String coreName, String corporateForm) {
+            this.coreName = coreName;
+            this.corporateForm = corporateForm;
+        }
+    }
+
     @Override
     public String normalize(String input) {
         if (input == null || input.isBlank()) {
@@ -91,6 +104,28 @@ public class NameNormalizer implements INormalizer<String> {
             return new DBAComponents(legalName, tradeName);
         } else {
             return new DBAComponents(input, null);
+        }
+    }
+
+    /**
+     * Extracts the core name and corporate form from a string.
+     * @param input The full name string.
+     * @return A NameComponents object containing the separated parts.
+     */
+    public NameComponents extractNameComponents(String input) {
+        if (input == null || input.isBlank()) {
+            return new NameComponents("", null);
+        }
+        String lowercasedInput = input.toLowerCase();
+        Pattern pattern = Pattern.compile(CORPORATE_FORMS_REGEX);
+        Matcher matcher = pattern.matcher(lowercasedInput);
+
+        if (matcher.find()) {
+            String corporateForm = matcher.group(1);
+            String coreName = input.replaceAll("(?i)" + CORPORATE_FORMS_REGEX, "").trim();
+            return new NameComponents(coreName, corporateForm);
+        } else {
+            return new NameComponents(input, null);
         }
     }
 

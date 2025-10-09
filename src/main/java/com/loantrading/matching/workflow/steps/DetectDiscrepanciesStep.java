@@ -24,22 +24,25 @@ public class DetectDiscrepanciesStep implements IWorkflowStep {
 
     @Override
     public void execute(MatchingContext context) {
+        Optional<ExtractedEntity> adfDataOpt = context.get(ContextKeys.EXTRACTED_ADF_DATA, ExtractedEntity.class);
+        Optional<ExtractedEntity> taxFormDataOpt = context.get(ContextKeys.EXTRACTED_TAX_FORM_DATA, ExtractedEntity.class);
         Optional<MatchResult> bestMatchOpt = context.get(ContextKeys.BEST_MATCH, MatchResult.class);
-        Optional<ExtractedEntity> masterEntityOpt = context.get(ContextKeys.MASTER_ENTITY, ExtractedEntity.class);
 
-        // If there's no best match or no master entity, there's nothing to compare.
-        if (bestMatchOpt.isEmpty() || masterEntityOpt.isEmpty()) {
-            return;
+        if (bestMatchOpt.isEmpty()) {
+            return; // No match, so no discrepancies to detect.
+        }
+        MatchResult bestMatch = bestMatchOpt.get();
+
+        // 1. Cross-document discrepancy detection
+        if (adfDataOpt.isPresent() && taxFormDataOpt.isPresent()) {
+            List<Discrepancy> crossDocDiscrepancies = discrepancyDetector.detectCrossDocumentDiscrepancies(adfDataOpt.get(), taxFormDataOpt.get());
+            crossDocDiscrepancies.forEach(bestMatch::addDiscrepancy);
         }
 
-        MatchResult bestMatch = bestMatchOpt.get();
-        ExtractedEntity masterEntity = masterEntityOpt.get();
-
-        // Cast the generic LoanIQEntity from the result to the specific MatchedEntity type.
-        List<Discrepancy> discrepancies = discrepancyDetector.detect(masterEntity, (MatchedEntity) bestMatch.getMatchedEntity());
-
-        if (!discrepancies.isEmpty()) {
-            // Add the found discrepancies to the MatchResult object.
+        // 2. Discrepancy detection between consolidated entity and matched DB entity
+        Optional<ExtractedEntity> masterEntityOpt = context.get(ContextKeys.MASTER_ENTITY, ExtractedEntity.class);
+        if (masterEntityOpt.isPresent()) {
+            List<Discrepancy> discrepancies = discrepancyDetector.detect(masterEntityOpt.get(), (MatchedEntity) bestMatch.getMatchedEntity());
             discrepancies.forEach(bestMatch::addDiscrepancy);
         }
     }

@@ -146,4 +146,20 @@ public class CharacterNormalizer {
         
         return name.trim();
     }
+
+    /**
+     * A less aggressive normalization for comparing two strings.
+     * It lowercases, removes diacritics, and standardizes whitespace and punctuation,
+     * but does NOT remove corporate forms or perform aggressive OCR correction.
+     */
+    public String normalizeForComparison(String text) {
+        if (text == null) {
+            return "";
+        }
+        String normalized = normalizeUnicodeAndPunctuation(text);
+        normalized = normalized.toLowerCase();
+        normalized = normalized.replaceAll("[,.'\"]", ""); // Remove common punctuation
+        normalized = normalized.replaceAll("\\s+", " ").trim(); // Standardize whitespace
+        return normalized;
+    }
 }

@@ -43,11 +43,11 @@ public class FieldParser {
     
     // Name patterns
     private static final List<Pattern> LEGAL_NAME_PATTERNS = Arrays.asList(
-        Pattern.compile("(?:Legal\\s+Name|Entity\\s+Name|Lender\\s+Name|Name\\s+of\\s+Lender)[:\\s]+([^\\n]+)", 
+        Pattern.compile("(?:Legal\\s+Name|Entity\\s+Name|Official\\s+Name|Lender\\s+Name|Name\\s+of\\s+Lender)[:\\s]+([^\\n]+)",
             Pattern.CASE_INSENSITIVE),
-        Pattern.compile("(?:Participant|Borrower|Obligor)\\s+Name[:\\s]+([^\\n]+)", 
+        Pattern.compile("(?:Participant|Borrower|Obligor)\\s+Name[:\\s]+([^\\n]+)",
             Pattern.CASE_INSENSITIVE),
-        Pattern.compile("^([A-Z][A-Za-z\\s&,.-]+(?:Inc|LLC|Ltd|LP|LLP|Corp|Company|PLC|SA|GmbH|BV|NV))\\.?", 
+        Pattern.compile("^([A-Z][A-Za-z\\s&,.-]+(?:Inc|LLC|Ltd|LP|LLP|Corp|Company|PLC|SA|GmbH|BV|NV))\\.?",
             Pattern.MULTILINE)
     );
     
@@ -220,11 +220,14 @@ public class FieldParser {
         for (Pattern pattern : LEGAL_NAME_PATTERNS) {
             Matcher matcher = pattern.matcher(text);
             if (matcher.find()) {
-                String legalName = normalizer.cleanEntityName(matcher.group(1));
-                entity.setLegalName(legalName);
-                entity.getRawFields().put("legal_name_raw", matcher.group(1));
+                String rawName = matcher.group(1).trim();
+                String normalizedName = normalizer.cleanEntityName(rawName);
+
+                entity.setRawLegalName(rawName);
+                entity.setLegalName(normalizedName);
+                entity.getRawFields().put("legal_name_raw", rawName); // Keep for compatibility
                 entity.setFieldConfidence("legal_name", 0.8);
-                logger.debug("Legal name extracted: {}", legalName);
+                logger.debug("Legal name extracted. Raw: '{}', Normalized: '{}'", rawName, normalizedName);
                 break;
             }
         }
